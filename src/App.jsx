@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-//import Pagination from "./app/contracts/services/ui/components/pagination-component"; // Adjusting the import
+import { HttpClientService, RequestParameters } from './app/services/common/http-client-service.js';
+import Pagination from './app/ui/components/Pagination';
 import './App.css';
 
 function App() {
@@ -15,20 +16,29 @@ function App() {
         OrderBy: 'Id ASC'
     });
 
+    const httpClientService = new HttpClientService('http://localhost:5000/api');
+
     useEffect(() => {
         const fetchCharacters = async () => {
-            const queryString = toQueryString(params);
+            const queryString = httpClientService.toQueryString(params);
             const requestParameters = {
-                Folder: "Character",
-                Controller: "Character",
-                Action: "GetAllPagedCharacter",
-                QueryString: queryString
+                Folder: 'Character',
+                Controller: 'Character',
+                Action: 'GetAllPagedCharacter',
+                QueryString: queryString,
+                Headers: {
+                    'Content-Type': 'application/json',
+                }
             };
-            const url = buildUrl(requestParameters);
-            const response = await fetch(url);
-            const data = await response.json();
-            setCharacters(data.Data.Data);
-            setPagination(data.Data.Pagination);
+
+            try {
+                const data = await httpClientService.getAsync(requestParameters);
+                setCharacters(data.Data.Data);
+                setPagination(data.Data.Pagination);
+                console.log(data.Data.Pagination); 
+            } catch (error) {
+                console.error('Error fetching characters:', error);
+            }
         };
 
         fetchCharacters();
@@ -143,7 +153,6 @@ function App() {
                                             <div className="col-md-8 characterDetailCard">
                                                 <div className="card-body">
                                                     <h4 className="card-title">{data.CharacterName}</h4>
-
                                                     <span>{data.StatusName} - {data.SpeciesName}</span>
                                                 </div>
 
@@ -169,132 +178,10 @@ function App() {
                         </div>
 
                         {/* Pagination Component */}
-
                         {pagination && <Pagination pagination={pagination} setParams={setParams} />}
                     </div>
                 </form>
             </div>
-        </div>
-    );
-}
-
-function buildUrl({ Folder, Controller, Action, QueryString }) {
-    return `http://localhost:5000/api/${Folder}/${Controller}/${Action}?${QueryString}`;
-}
-
-function toQueryString(params) {
-    return Object.keys(params)
-        .filter(key => params[key] !== null && params[key] !== '' && params[key] !== undefined)
-        .map(key => encodeURIComponent(key) + '=' + encodeURIComponent(params[key]))
-        .join('&');
-}
-
-//Pagination component
-// function Pagination({ pagination, setParams }) {
-//   const pages = [];
-//   for (let i = 1; i <= pagination.TotalPages; i++) {
-//     pages.push(i);
-//   }
-
-//   const handlePageClick = (pageIndex) => {
-//     setParams(prevParams => ({
-//       ...prevParams,
-//       PageIndex: pageIndex
-//     }));
-//   };
-
-//   return (
-//     <nav aria-label="Page navigation">
-//       <ul className="pagination">
-//         {pagination.HasPreviousPage && (
-//           <li className="page-item">
-//             <button className="page-link" onClick={() => handlePageClick(pagination.PageIndex - 1)}>Önceki</button>
-//           </li>
-//         )}
-//         {pages.map(page => (
-//           <li key={page} className={`page-item ${page === pagination.PageIndex ? 'active' : ''}`}>
-//             <button className="page-link" onClick={() => handlePageClick(page)}>{page}</button>
-//           </li>
-//         ))}
-//         {pagination.HasNextPage && (
-//           <li className="page-item">
-//             <button className="page-link" onClick={() => handlePageClick(pagination.PageIndex + 1)}>Sonraki</button>
-//           </li>
-//         )}
-//       </ul>
-//     </nav>
-//   );
-// }
-function Pagination({ pagination, setParams }) {
-    const LastPage = Math.ceil(pagination.TotalRecords / pagination.PageSize);
-    const URL = window.location.href.split('?')[0];
-    const first = pagination.PageIndex < 5 ? 0 : (pagination.PageIndex - 5);
-    const last = pagination.TotalPages > 10 ? (first + 10) : LastPage;
-
-    const createPageUrl = (pageIndex) => {
-        const searchParams = new URLSearchParams(window.location.search);
-        searchParams.set('PageIndex', pageIndex);
-        return `${URL}?${searchParams.toString()}`;
-    };
-
-    const handlePageClick = (pageIndex) => {
-        setParams(prevParams => ({
-            ...prevParams,
-            PageIndex: pageIndex
-        }));
-    };
-    return (
-        <div className="row">
-            {LastPage > 0 && (
-                <>
-                    <div className="col-sm-12 text-center mt-2">
-                        <div className="dataTables_info F11" role="status" aria-live="polite">
-                            <b>{pagination.TotalRecords}</b> kayıttan <b>{(pagination.PageSize * (pagination.PageIndex - 1)) + 1} - {Math.min(pagination.PageSize * pagination.PageIndex, pagination.TotalRecords)}</b> arası görüntüleniyor
-                        </div>
-                    </div>
-                    <div className="col-sm-12 mt-3 text-center d-flex justify-content-center">
-                        <div className="dataTables_paginate paging_simple_numbers">
-                            <ul className="pagination">
-                                {pagination.PageIndex > 1 && (
-                                    <li className="paginate_button page-item previous">
-                                        <a
-                                            href={createPageUrl(pagination.PageIndex - 1)}
-                                            className="page-link"
-                                        >
-                                            Önceki
-                                        </a>
-                                    </li>
-                                )}
-                                {[...Array(last - first + 1)].map((_, index) => {
-                                    const page = first + index;
-                                    if (page >= LastPage) return null;
-                                    const isActive = pagination.PageIndex === page + 1 ? 'active' : '';
-                                    return (
-                                        <li key={page} className={`paginate_button page-item ${isActive}`}>
-                                            <a
-                                                href={createPageUrl(page + 1)}
-                                                className="page-link"
-                                            >
-                                                {page + 1}
-                                            </a>
-                                        </li>
-                                    );
-                                })}
-                                {pagination.PageIndex < LastPage && (
-                                    <li className="paginate_button page-item next">
-                                        <a
-                                            href={createPageUrl(pagination.PageIndex + 1)}
-                                            className="page-link"
-                                        >
-                                            Sonraki
-                                        </a>
-                                    </li>
-                                )}
-                            </ul>
-                        </div>
-                    </div>
-                </>
-            )}
         </div>
     );
 }
