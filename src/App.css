@@ -1,0 +1,61 @@
+
+.page-title {
+  display: flex;
+  align-items: center;
+  background-color: #FFFFFF;
+  padding: 10px;
+}
+
+  .page-title div:first-child {
+      margin-left: 5px;
+  }
+
+  .page-title div:last-child {
+      margin-left: auto;
+  }
+
+.middleLand {
+  align-items: center;
+  height: 420px;
+}
+
+.apiTitle {
+  text-align: center;
+  font-size: 88px;
+  font-weight: bold;
+  margin-top: 150px;
+}
+
+.hero-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: -230px;
+  height: 100%;
+  overflow: hidden;
+}
+
+  .hero-image svg {
+      width: 100%;
+      height: auto;
+      max-width: 378px;
+      max-height: 376px;
+      opacity: 0.04;
+      object-fit: contain;
+  }
+
+.heroCard {
+  color: white;
+  height:220px;
+}
+
+.characterDetailCard {
+  position: absolute;
+  margin-top: -25px;
+  margin-left: -15px;
+}
+.characterDetailCardBottom{
+  position:absolute;
+  margin-top: -45px;
+  font-size:15px;
+}
